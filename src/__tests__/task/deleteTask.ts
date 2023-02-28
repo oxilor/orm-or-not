@@ -1,3 +1,4 @@
+import { sql } from 'slonik';
 import Task from '../../entities/Task';
 import { ctx } from '../../test-files/setupTests';
 import GlobalId from '../../utils/graphql/GlobalId';
@@ -30,10 +31,8 @@ it('Should delete the existing task', async () => {
   expect(ok).toBeTruthy();
 
   // Test the database
-  const task = await ctx
-    .knex('tasks')
-    .where('id', taskData[0].id)
-    .select()
-    .first();
-  expect(task).toBeUndefined();
+  const task = await ctx.pool.maybeOne(
+    sql.unsafe`SELECT * FROM tasks WHERE id = ${taskData[0].id}`
+  );
+  expect(task).toBeNull();
 });

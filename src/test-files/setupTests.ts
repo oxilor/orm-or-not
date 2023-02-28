@@ -1,14 +1,14 @@
 import TestClient from '@os-team/graphql-test-client';
 import * as http from 'http';
-import knex, { Knex } from 'knex';
 import 'reflect-metadata';
-import knexConfig from '../../knexfile';
+import { DatabasePool, sql } from 'slonik';
+import createPool from '../utils/createPool';
 import createSeeder, { Seed } from '../utils/createSeeder';
 import createServer from '../utils/createServer';
 
 interface TestContext {
   client: TestClient;
-  knex: Knex.Transaction;
+  pool: DatabasePool;
   seed: Seed;
   server: http.Server;
 }
@@ -20,28 +20,31 @@ const JEST_WORKER_INDEX = Number(process.env.JEST_WORKER_ID) - 1;
 const PORT = 4000 + JEST_WORKER_INDEX;
 const URL = `http://localhost:${PORT}/graphql`;
 
-const knexInstance = knex(knexConfig);
+let pool: DatabasePool;
+
+beforeAll(async () => {
+  pool = await createPool();
+});
 
 afterAll(async () => {
   // Close the connection
-  await knexInstance.destroy();
+  await pool.end();
 });
 
 beforeEach(async () => {
   // Start a new transaction
-  const knexTransaction = await knexInstance.transaction();
+  await pool.query(sql.unsafe`START TRANSACTION`);
 
   const client = new TestClient({ url: URL });
-  const seed = createSeeder(knexTransaction);
-  const server = await createServer(knexTransaction, PORT);
+  const seed = createSeeder(pool);
+  const server = await createServer(pool, PORT);
 
-  ctx = { client, knex: knexTransaction, seed, server };
+  ctx = { client, pool, seed, server };
 });
 
 afterEach(async () => {
   // Rollback the transaction
-  await ctx.knex.rollback();
-  await ctx.knex.destroy();
+  await ctx.pool.query(sql.unsafe`ROLLBACK`);
 
   // Close the server
   await new Promise((resolve) => {

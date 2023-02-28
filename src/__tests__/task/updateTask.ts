@@ -1,3 +1,4 @@
+import { sql } from 'slonik';
 import Task from '../../entities/Task';
 import { ctx } from '../../test-files/setupTests';
 import GlobalId from '../../utils/graphql/GlobalId';
@@ -35,11 +36,9 @@ it('Should update the existing task', async () => {
   expect(taskRes.name).toBe(input.name);
 
   // Test the database
-  const task = await ctx
-    .knex('tasks')
-    .where('id', taskData[0].id)
-    .select()
-    .first();
+  const task = await ctx.pool.maybeOne(
+    sql.unsafe`SELECT * FROM tasks WHERE id = ${taskData[0].id}`
+  );
   expect(task).toBeDefined();
   expect(task?.name).toBe(input.name);
 });

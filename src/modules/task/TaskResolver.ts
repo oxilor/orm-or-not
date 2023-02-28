@@ -1,3 +1,4 @@
+import { sql } from 'slonik';
 import {
   Arg,
   Args,
@@ -36,7 +37,9 @@ class TaskResolver {
     @Ctx() ctx: Context
   ): Promise<Task> {
     const id = GlobalId.decode(Task, globalId);
-    const task = await ctx.knex('tasks').where('id', id).select().first();
+    const task = await ctx.pool.maybeOne(
+      sql.unsafe`SELECT * FROM tasks WHERE id = ${id}`
+    );
     if (!task) throw new Error('Task is not found');
     return task;
   }
@@ -48,15 +51,23 @@ class TaskResolver {
   ): Promise<Connection<Task>> {
     const { limit, sortOrder, condition } = getPagingParams(args);
 
-    const query = ctx.knex('tasks');
+    const whereFragment = condition
+      ? sql.fragment`WHERE id ${
+          condition.operator === '>' ? sql.fragment`>` : sql.fragment`<`
+        } ${condition.params.id}`
+      : sql.fragment``;
 
-    if (condition) {
-      query.where('id', condition.operator, condition.params.id);
-    }
+    const sortOrderFragment =
+      sortOrder === 'ASC' ? sql.fragment`ASC` : sql.fragment`DESC`;
 
-    const tasks = await query.orderBy('id', sortOrder).limit(limit + 1);
+    const tasks = await ctx.pool.query(sql.unsafe`
+      SELECT * FROM tasks
+      ${whereFragment}
+      ORDER BY id ${sortOrderFragment}
+      LIMIT ${limit + 1}
+    `);
 
-    return connectionFromArray({ nodes: tasks, args, limit });
+    return connectionFromArray({ nodes: tasks.rows as Task[], args, limit });
   }
 
   @Mutation(() => Task)
@@ -64,11 +75,10 @@ class TaskResolver {
     @Arg('input') input: CreateTaskInput,
     @Ctx() ctx: Context
   ): Promise<Task> {
-    const res = await ctx
-      .knex('tasks')
-      .insert({ name: input.name })
-      .returning('*');
-    return res[0];
+    const res = await ctx.pool.one(
+      sql.unsafe`INSERT INTO tasks (name) VALUES (${input.name}) RETURNING *`
+    );
+    return res;
   }
 
   @Mutation(() => Task)
@@ -77,12 +87,10 @@ class TaskResolver {
     @Ctx() ctx: Context
   ): Promise<Task> {
     const id = GlobalId.decode(Task, input.id);
-    const res = await ctx
-      .knex('tasks')
-      .where('id', id)
-      .update({ name: input.name })
-      .returning('*');
-    return res[0];
+    const res = await ctx.pool.one(
+      sql.unsafe`UPDATE tasks SET name = ${input.name} WHERE id = ${id} RETURNING *`
+    );
+    return res;
   }
 
   @Mutation(() => Boolean)
@@ -91,7 +99,7 @@ class TaskResolver {
     @Ctx() ctx: Context
   ): Promise<boolean> {
     const id = GlobalId.decode(Task, input.id);
-    await ctx.knex('tasks').where('id', id).delete();
+    await ctx.pool.query(sql.unsafe`DELETE FROM tasks WHERE id = ${id}`);
     return true;
   }
 }

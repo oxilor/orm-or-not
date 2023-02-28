@@ -1,12 +1,12 @@
 import { ExpressContext } from 'apollo-server-express';
-import { Knex } from 'knex';
+import { DatabasePool } from 'slonik';
 
 export interface Context extends ExpressContext {
-  knex: Knex;
+  pool: DatabasePool;
 }
 
 const createContext =
-  (knex: Knex) =>
-  (ctx: ExpressContext): Context => ({ ...ctx, knex });
+  (pool: DatabasePool) =>
+  (ctx: ExpressContext): Context => ({ ...ctx, pool });
 
 export default createContext;

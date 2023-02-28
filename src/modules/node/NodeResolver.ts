@@ -1,3 +1,4 @@
+import { sql } from 'slonik';
 import { Arg, Ctx, ID, Query, Resolver } from 'type-graphql';
 import { Context } from '../../utils/createContext';
 import Base64 from '../../utils/graphql/Base64';
@@ -24,7 +25,11 @@ class NodeResolver {
       const tableName = entityNameTableNameMap[entityName];
       if (!tableName) return null;
 
-      const node = await ctx.knex(tableName).where('id', id).select().first();
+      const node = await ctx.pool.maybeOne(
+        sql.unsafe`SELECT * FROM ${sql.identifier([
+          tableName,
+        ])} WHERE id = ${id}`
+      );
       if (!node) return null;
 
       return node as Node;

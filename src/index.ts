@@ -1,20 +1,21 @@
-import knex from 'knex';
 import 'reflect-metadata';
-import knexConfig from '../knexfile';
+import createPool from './utils/createPool';
 import createServer from './utils/createServer';
+import migrate from './utils/migrate';
 
 const PORT = 4000;
 
 (async () => {
-  const knexInstance = knex(knexConfig);
+  await migrate();
+  const pool = await createPool();
   try {
-    const server = await createServer(knexInstance, PORT, () => {
+    const server = await createServer(pool, PORT, () => {
       // eslint-disable-next-line no-console
       console.log(`🚀 Server ready at http://localhost:${PORT}/graphql`);
     });
-    server.once('close', () => knexInstance.destroy());
+    server.once('close', () => pool.end());
     process.once('SIGINT', () => server.close());
   } catch (e) {
-    await knexInstance.destroy();
+    await pool.end();
   }
 })();

@@ -1,17 +1,18 @@
-import knex from 'knex';
-import knexConfig from '../../knexfile';
+import { sql } from 'slonik';
+import createPool from '../utils/createPool';
+import migrate from '../utils/migrate';
 
 const setup = async () => {
   // Open the connection
-  const knexInstance = knex(knexConfig);
+  const pool = await createPool();
 
   // Drop and sync the schema
-  await knexInstance.schema.dropSchema('public', true);
-  await knexInstance.schema.createSchema('public');
-  await knexInstance.migrate.latest();
+  await pool.query(sql.unsafe`DROP SCHEMA public CASCADE`);
+  await pool.query(sql.unsafe`CREATE SCHEMA public`);
+  await migrate();
 
   // Close the connection
-  await knexInstance.destroy();
+  await pool.end();
 };
 
 export default setup;
