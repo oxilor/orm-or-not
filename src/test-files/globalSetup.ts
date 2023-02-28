@@ -1,14 +1,17 @@
-import appDataSource from '../../dataSource';
+import knex from 'knex';
+import knexConfig from '../../knexfile';
 
 const setup = async () => {
   // Open the connection
-  await appDataSource.initialize();
+  const knexInstance = knex(knexConfig);
 
   // Drop and sync the schema
-  await appDataSource.synchronize(true);
+  await knexInstance.schema.dropSchema('public', true);
+  await knexInstance.schema.createSchema('public');
+  await knexInstance.migrate.latest();
 
   // Close the connection
-  await appDataSource.destroy();
+  await knexInstance.destroy();
 };
 
 export default setup;

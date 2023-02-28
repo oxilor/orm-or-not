@@ -14,7 +14,7 @@ const createTaskMutation = `
 
 it('Should create a new task', async () => {
   // Seed a task
-  const taskData = await ctx.seed(Task, {
+  const taskData = await ctx.seed('tasks', {
     name: 'name',
   });
 
@@ -35,7 +35,7 @@ it('Should create a new task', async () => {
 
   // Test the database
   const id = GlobalId.decode(Task, taskRes.id);
-  const task = await ctx.manager.getRepository(Task).findOneBy({ id });
+  const task = await ctx.knex('tasks').where('id', id).select().first();
   expect(task).toBeDefined();
   expect(task?.name).toBe(input.name);
 });

@@ -19,7 +19,7 @@ const tasksQuery = `
 
 it('Should sort tasks by id in ascending order', async () => {
   // Seed tasks
-  const tasksData = await ctx.seed(Task, [
+  const tasksData = await ctx.seed('tasks', [
     { name: 'name' },
     { name: 'name2' },
     { name: 'name3' },
@@ -41,7 +41,7 @@ it('Should sort tasks by id in ascending order', async () => {
 
 it('Should return tasks after the specified one', async () => {
   // Seed tasks
-  const tasksData = await ctx.seed(Task, [
+  const tasksData = await ctx.seed('tasks', [
     { name: 'name' },
     { name: 'name2' },
     { name: 'name3' },

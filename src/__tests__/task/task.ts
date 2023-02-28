@@ -22,7 +22,7 @@ const taskQuery = `
 
 it('Should return the existing task', async () => {
   // Seed a task
-  const taskData = await ctx.seed(Task, {
+  const taskData = await ctx.seed('tasks', {
     name: 'name',
   });
 

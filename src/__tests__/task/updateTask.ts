@@ -14,7 +14,7 @@ const updateTaskMutation = `
 
 it('Should update the existing task', async () => {
   // Seed a task
-  const taskData = await ctx.seed(Task, {
+  const taskData = await ctx.seed('tasks', {
     name: 'name',
   });
 
@@ -35,9 +35,11 @@ it('Should update the existing task', async () => {
   expect(taskRes.name).toBe(input.name);
 
   // Test the database
-  const task = await ctx.manager
-    .getRepository(Task)
-    .findOneBy({ id: taskData[0].id });
+  const task = await ctx
+    .knex('tasks')
+    .where('id', taskData[0].id)
+    .select()
+    .first();
   expect(task).toBeDefined();
   expect(task?.name).toBe(input.name);
 });

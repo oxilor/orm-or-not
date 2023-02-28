@@ -10,7 +10,7 @@ const deleteTaskMutation = `
 
 it('Should delete the existing task', async () => {
   // Seed a task
-  const taskData = await ctx.seed(Task, {
+  const taskData = await ctx.seed('tasks', {
     name: 'name',
   });
 
@@ -30,8 +30,10 @@ it('Should delete the existing task', async () => {
   expect(ok).toBeTruthy();
 
   // Test the database
-  const task = await ctx.manager
-    .getRepository(Task)
-    .findOneBy({ id: taskData[0].id });
-  expect(task).toBeNull();
+  const task = await ctx
+    .knex('tasks')
+    .where('id', taskData[0].id)
+    .select()
+    .first();
+  expect(task).toBeUndefined();
 });

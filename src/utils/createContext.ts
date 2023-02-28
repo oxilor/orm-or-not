@@ -1,12 +1,12 @@
 import { ExpressContext } from 'apollo-server-express';
-import { EntityManager } from 'typeorm';
+import { Knex } from 'knex';
 
 export interface Context extends ExpressContext {
-  manager: EntityManager;
+  knex: Knex;
 }
 
 const createContext =
-  (manager: EntityManager) =>
-  (ctx: ExpressContext): Context => ({ ...ctx, manager });
+  (knex: Knex) =>
+  (ctx: ExpressContext): Context => ({ ...ctx, knex });
 
 export default createContext;

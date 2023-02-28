@@ -1,14 +1,14 @@
 import { ApolloServer } from 'apollo-server-express';
 import express from 'express';
 import { Server } from 'http';
+import { Knex } from 'knex';
 import { buildSchema } from 'type-graphql';
-import { EntityManager } from 'typeorm';
 import NodeResolver from '../modules/node/NodeResolver';
 import TaskResolver from '../modules/task/TaskResolver';
 import createContext from './createContext';
 
 const createServer = async (
-  manager: EntityManager,
+  knex: Knex,
   port: number,
   callback?: () => void
 ): Promise<Server> => {
@@ -21,7 +21,7 @@ const createServer = async (
   // Create a GraphQL server
   const graphqlServer = new ApolloServer({
     schema,
-    context: createContext(manager),
+    context: createContext(knex),
   });
 
   // Create an express server

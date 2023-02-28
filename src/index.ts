@@ -1,18 +1,20 @@
+import knex from 'knex';
 import 'reflect-metadata';
-import appDataSource from '../dataSource';
+import knexConfig from '../knexfile';
 import createServer from './utils/createServer';
 
 const PORT = 4000;
 
 (async () => {
+  const knexInstance = knex(knexConfig);
   try {
-    const server = await createServer(appDataSource.manager, PORT, () => {
+    const server = await createServer(knexInstance, PORT, () => {
       // eslint-disable-next-line no-console
       console.log(`🚀 Server ready at http://localhost:${PORT}/graphql`);
     });
-    server.once('close', () => appDataSource.destroy());
+    server.once('close', () => knexInstance.destroy());
     process.once('SIGINT', () => server.close());
   } catch (e) {
-    await appDataSource.destroy();
+    await knexInstance.destroy();
   }
 })();

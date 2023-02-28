@@ -1,23 +1,11 @@
-import { EntityManager } from 'typeorm';
-import { ObjectType } from 'typeorm/common/ObjectType';
-import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
+import { Knex } from 'knex';
 
-export type Seed = <Entity>(
-  entity: ObjectType<Entity>,
-  data: QueryDeepPartialEntity<Entity> | QueryDeepPartialEntity<Entity>[]
-) => Promise<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Seed = (table: string, data: any) => Promise<any>;
 
 const createSeeder =
-  (manager: EntityManager): Seed =>
-  async (entity, data) => {
-    const res = await manager
-      .createQueryBuilder()
-      .insert()
-      .into(entity)
-      .values(data)
-      .returning('*')
-      .execute();
-    return res.raw;
-  };
+  (knex: Knex): Seed =>
+  (table, data) =>
+    knex(table).insert(data).returning('*');
 
 export default createSeeder;

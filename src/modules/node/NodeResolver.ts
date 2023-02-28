@@ -3,6 +3,10 @@ import { Context } from '../../utils/createContext';
 import Base64 from '../../utils/graphql/Base64';
 import Node from '../../utils/graphql/Node';
 
+const entityNameTableNameMap: Record<string, string> = {
+  Task: 'tasks',
+};
+
 @Resolver()
 class NodeResolver {
   @Query(() => Node, { nullable: true })
@@ -17,9 +21,10 @@ class NodeResolver {
       const id = Number(stringId);
       if (!entityName || Number.isNaN(id)) return null;
 
-      const node = await ctx.manager
-        .getRepository(entityName)
-        .findOneBy({ id });
+      const tableName = entityNameTableNameMap[entityName];
+      if (!tableName) return null;
+
+      const node = await ctx.knex(tableName).where('id', id).select().first();
       if (!node) return null;
 
       return node as Node;

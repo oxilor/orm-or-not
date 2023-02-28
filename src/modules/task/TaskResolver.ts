@@ -36,7 +36,7 @@ class TaskResolver {
     @Ctx() ctx: Context
   ): Promise<Task> {
     const id = GlobalId.decode(Task, globalId);
-    const task = await ctx.manager.getRepository(Task).findOneBy({ id });
+    const task = await ctx.knex('tasks').where('id', id).select().first();
     if (!task) throw new Error('Task is not found');
     return task;
   }
@@ -48,18 +48,13 @@ class TaskResolver {
   ): Promise<Connection<Task>> {
     const { limit, sortOrder, condition } = getPagingParams(args);
 
-    const query = ctx.manager.getRepository(Task).createQueryBuilder();
+    const query = ctx.knex('tasks');
 
     if (condition) {
-      query.where(`id ${condition.operator} :id`, {
-        id: condition.params.id,
-      });
+      query.where('id', condition.operator, condition.params.id);
     }
 
-    const tasks = await query
-      .orderBy('id', sortOrder)
-      .limit(limit + 1)
-      .getMany();
+    const tasks = await query.orderBy('id', sortOrder).limit(limit + 1);
 
     return connectionFromArray({ nodes: tasks, args, limit });
   }
@@ -69,9 +64,11 @@ class TaskResolver {
     @Arg('input') input: CreateTaskInput,
     @Ctx() ctx: Context
   ): Promise<Task> {
-    const task = new Task();
-    task.name = input.name;
-    return ctx.manager.save(task);
+    const res = await ctx
+      .knex('tasks')
+      .insert({ name: input.name })
+      .returning('*');
+    return res[0];
   }
 
   @Mutation(() => Task)
@@ -79,9 +76,13 @@ class TaskResolver {
     @Arg('input') input: UpdateTaskInput,
     @Ctx() ctx: Context
   ): Promise<Task> {
-    const task = await this.task(input.id, ctx);
-    task.name = input.name;
-    return ctx.manager.save(task);
+    const id = GlobalId.decode(Task, input.id);
+    const res = await ctx
+      .knex('tasks')
+      .where('id', id)
+      .update({ name: input.name })
+      .returning('*');
+    return res[0];
   }
 
   @Mutation(() => Boolean)
@@ -90,7 +91,7 @@ class TaskResolver {
     @Ctx() ctx: Context
   ): Promise<boolean> {
     const id = GlobalId.decode(Task, input.id);
-    await ctx.manager.getRepository(Task).delete({ id });
+    await ctx.knex('tasks').where('id', id).delete();
     return true;
   }
 }
