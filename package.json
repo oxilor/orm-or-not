@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
-    "dev": "NODE_ENV=development ts-node-dev --files --respawn src/index.ts",
+    "sync": "npx dotenv-cli -e .env.development -- sh src/scripts/sync.sh",
+    "sync:test": "npx dotenv-cli -e .env.test -- sh src/scripts/sync-auto.sh",
+    "dev": "yarn sync && NODE_ENV=development ts-node-dev --files --respawn src/index.ts",
     "test": "jest"
   },
   "dependencies": {
@@ -14,7 +16,6 @@
     "express": "^4.18.2",
     "graphql": "^16.6.0",
     "pg": "^8.9.0",
-    "postgrator": "5.0.1",
     "reflect-metadata": "^0.1.13",
     "slonik": "^33.1.0",
     "ts-node-dev": "^2.0.0",

@@ -1,22 +1,15 @@
+import dotenv from 'dotenv';
 import {
+  ConnectionOptions,
   createPool as createSlonikPool,
   Interceptor,
   SchemaValidationError,
   SerializableValue,
   stringifyDsn,
-  TypeParser,
+  TypeParser
 } from 'slonik';
-import dotenv from 'dotenv';
 
 dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
-
-const connectionUri = stringifyDsn({
-  host: process.env.POSTGRES_HOST,
-  port: Number(process.env.POSTGRES_PORT),
-  username: process.env.POSTGRES_USERNAME,
-  password: process.env.POSTGRES_PASSWORD,
-  databaseName: process.env.POSTGRES_DATABASE,
-});
 
 const timestamptzParser: TypeParser = {
   name: 'timestamptz',
@@ -52,10 +45,20 @@ const camelCaseInterceptor: Interceptor = {
   },
 };
 
-const createPool = () =>
-  createSlonikPool(connectionUri, {
+const createPool = (connectionOptions: Partial<ConnectionOptions> = {}) => {
+  const connectionUri = stringifyDsn({
+    host: process.env.POSTGRES_HOST,
+    port: Number(process.env.POSTGRES_PORT),
+    username: process.env.POSTGRES_USERNAME,
+    password: process.env.POSTGRES_PASSWORD,
+    databaseName: process.env.POSTGRES_DATABASE,
+    ...connectionOptions,
+  });
+
+  return createSlonikPool(connectionUri, {
     typeParsers: [timestamptzParser],
     interceptors: [camelCaseInterceptor],
   });
+}
 
 export default createPool;
