@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import {
   ConnectionOptions,
   createPool as createSlonikPool,
-  Interceptor,
+  Interceptor, PrimitiveValueExpression, QueryResultRow,
   SchemaValidationError,
   SerializableValue,
   stringifyDsn,
@@ -39,9 +39,9 @@ const camelCaseInterceptor: Interceptor = {
       const camelCaseKey = key.replace(/(_[a-zA-Z])/g, (c) =>
         c.slice(1).toUpperCase()
       );
-      acc[camelCaseKey] = value;
+      acc[camelCaseKey] = value as PrimitiveValueExpression;
       return acc;
-    }, {});
+    }, {} as QueryResultRow);
   },
 };
 

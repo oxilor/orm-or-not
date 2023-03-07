@@ -6,6 +6,10 @@ const setup = async () => {
   // Open the connection
   const pool = await createPool({ databaseName: 'postgres' });
 
+  if (!process.env.POSTGRES_DATABASE) {
+    throw new Error('POSTGRES_DATABASE is required')
+  }
+
   // Recreate the database
   await pool.query(sql.unsafe`DROP DATABASE IF EXISTS ${sql.identifier([process.env.POSTGRES_DATABASE])}`);
   await pool.query(sql.unsafe`CREATE DATABASE ${sql.identifier([process.env.POSTGRES_DATABASE])}`);

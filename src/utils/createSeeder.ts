@@ -5,7 +5,7 @@ type Data = Record<string, string | number | boolean>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Seed = (table: string, data: Data | Data[]) => Promise<any>;
 
-const typePgTypeMap = {
+const typePgTypeMap: Record<string, any> = {
   string: sql.fragment`text`,
   number: sql.fragment`integer`,
   boolean: sql.fragment`boolean`,
@@ -27,7 +27,7 @@ const createSeeder =
       columnNames.reduce((acc, col) => {
         acc.push(item[col]);
         return acc;
-      }, [])
+      }, [] as any[])
     );
 
     const types = columnNames.map((item) => {
