@@ -60,14 +60,14 @@ class TaskResolver {
     const sortOrderFragment =
       sortOrder === 'ASC' ? sql.fragment`ASC` : sql.fragment`DESC`;
 
-    const tasks = await ctx.pool.query(sql.unsafe`
+    const tasks = await ctx.pool.any(sql.unsafe`
       SELECT * FROM tasks
       ${whereFragment}
       ORDER BY id ${sortOrderFragment}
       LIMIT ${limit + 1}
     `);
 
-    return connectionFromArray({ nodes: tasks.rows as Task[], args, limit });
+    return connectionFromArray({ nodes: tasks as Task[], args, limit });
   }
 
   @Mutation(() => Task)
