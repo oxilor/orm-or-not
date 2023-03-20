@@ -8,7 +8,7 @@ interface Options<T> {
   /**
    * An array of objects.
    */
-  nodes: T[];
+  nodes: readonly T[];
   /**
    * The GraphQL connection arguments.
    */

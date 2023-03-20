@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import {
   ConnectionOptions,
   createPool as createSlonikPool,
-  Interceptor, PrimitiveValueExpression, QueryResultRow,
+  Interceptor, QueryResultRow,
   SchemaValidationError,
   SerializableValue,
   stringifyDsn,
@@ -20,12 +20,19 @@ const camelCaseInterceptor: Interceptor = {
   transformRow: (executionContext, actualQuery, row) => {
     const { resultParser } = executionContext;
 
+    const transformedRaw = Object.entries(row).reduce<QueryResultRow>((acc, [key, value]) => {
+      const camelCaseKey = key.replace(/(_[a-zA-Z])/g, (c) =>
+        c.slice(1).toUpperCase()
+      );
+      acc[camelCaseKey] = value;
+      return acc;
+    }, {})
+
     if (!resultParser) {
       return row;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const validationResult = resultParser.safeParse(row) as any;
+    const validationResult = resultParser.safeParse(transformedRaw);
 
     if (!validationResult.success) {
       throw new SchemaValidationError(
@@ -35,13 +42,7 @@ const camelCaseInterceptor: Interceptor = {
       );
     }
 
-    return Object.entries(validationResult.data).reduce((acc, [key, value]) => {
-      const camelCaseKey = key.replace(/(_[a-zA-Z])/g, (c) =>
-        c.slice(1).toUpperCase()
-      );
-      acc[camelCaseKey] = value as PrimitiveValueExpression;
-      return acc;
-    }, {} as QueryResultRow);
+    return validationResult.data;
   },
 };
 

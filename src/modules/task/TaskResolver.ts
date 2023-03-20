@@ -8,8 +8,9 @@ import {
   Mutation,
   Query,
   Resolver,
-  Root,
+  Root
 } from 'type-graphql';
+import z from 'zod';
 import Task from '../../entities/Task';
 import { Context } from '../../utils/createContext';
 import ConnectionArgs from '../../utils/graphql/ConnectionArgs';
@@ -23,6 +24,15 @@ import DeleteTaskInput from './DeleteTaskInput';
 import UpdateTaskInput from './UpdateTaskInput';
 
 export const TaskConnection = createConnectionType(Task);
+
+const getSqlOperator = (operator: '<' | '>') => operator === '<' ? sql.fragment`<` : sql.fragment`>`
+const getSqlOrder = (order: 'ASC' | 'DESC') => order === 'ASC' ? sql.fragment`ASC` : sql.fragment`DESC`
+
+const taskObj = z.object({
+  id: z.number(),
+  createdAt: z.date(),
+  name: z.string(),
+})
 
 @Resolver(() => Task)
 class TaskResolver {
@@ -38,7 +48,7 @@ class TaskResolver {
   ): Promise<Task> {
     const id = GlobalId.decode(Task, globalId);
     const task = await ctx.pool.maybeOne(
-      sql.unsafe`SELECT * FROM tasks WHERE id = ${id}`
+      sql.type(taskObj)`SELECT * FROM tasks WHERE id = ${id}`
     );
     if (!task) throw new Error('Task is not found');
     return task;
@@ -52,22 +62,17 @@ class TaskResolver {
     const { limit, sortOrder, condition } = getPagingParams(args);
 
     const whereFragment = condition
-      ? sql.fragment`WHERE id ${
-          condition.operator === '>' ? sql.fragment`>` : sql.fragment`<`
-        } ${condition.params.id}`
-      : sql.fragment``;
+      ? sql.fragment`id ${getSqlOperator(condition.operator)} ${condition.params.id}`
+      : true;
 
-    const sortOrderFragment =
-      sortOrder === 'ASC' ? sql.fragment`ASC` : sql.fragment`DESC`;
-
-    const tasks = await ctx.pool.any(sql.unsafe`
+    const tasks = await ctx.pool.any(sql.type(taskObj)`
       SELECT * FROM tasks
-      ${whereFragment}
-      ORDER BY id ${sortOrderFragment}
+      WHERE ${whereFragment}
+      ORDER BY id ${getSqlOrder(sortOrder)}
       LIMIT ${limit + 1}
     `);
 
-    return connectionFromArray({ nodes: tasks as Task[], args, limit });
+    return connectionFromArray({ nodes: tasks, args, limit });
   }
 
   @Mutation(() => Task)
@@ -76,7 +81,7 @@ class TaskResolver {
     @Ctx() ctx: Context
   ): Promise<Task> {
     const res = await ctx.pool.one(
-      sql.unsafe`INSERT INTO tasks (name) VALUES (${input.name}) RETURNING *`
+      sql.type(taskObj)`INSERT INTO tasks (name) VALUES (${input.name}) RETURNING *`
     );
     return res;
   }
@@ -88,7 +93,7 @@ class TaskResolver {
   ): Promise<Task> {
     const id = GlobalId.decode(Task, input.id);
     const res = await ctx.pool.one(
-      sql.unsafe`UPDATE tasks SET name = ${input.name} WHERE id = ${id} RETURNING *`
+      sql.type(taskObj)`UPDATE tasks SET name = ${input.name} WHERE id = ${id} RETURNING *`
     );
     return res;
   }
@@ -99,8 +104,8 @@ class TaskResolver {
     @Ctx() ctx: Context
   ): Promise<boolean> {
     const id = GlobalId.decode(Task, input.id);
-    await ctx.pool.query(sql.unsafe`DELETE FROM tasks WHERE id = ${id}`);
-    return true;
+    const res = await ctx.pool.query(sql.unsafe`DELETE FROM tasks WHERE id = ${id}`);
+    return res.rowCount > 0;
   }
 }
 
