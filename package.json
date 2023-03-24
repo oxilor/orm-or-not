@@ -5,9 +5,6 @@
   "scripts": {
     "sync": "npx dotenv-cli -e .env.development -- sh src/scripts/schema-apply.sh",
     "sync:test": "npx dotenv-cli -e .env.test -- sh src/scripts/schema-apply-auto.sh",
-    "m:new": "sh src/scripts/migrate-new.sh",
-    "m:hash": "sh src/scripts/migrate-hash.sh",
-    "m:apply": "npx dotenv-cli -e .env.development -- sh src/scripts/migrate-apply.sh",
     "dev": "yarn sync && NODE_ENV=development ts-node-dev --files --respawn src/index.ts",
     "test": "jest"
   },

@@ -3,19 +3,22 @@ import createPool from '../utils/createPool';
 import { exec } from 'child_process'
 
 const setup = async () => {
-  // Open the connection
-  const pool = await createPool({ databaseName: 'postgres' });
-
   if (!process.env.POSTGRES_DATABASE) {
     throw new Error('POSTGRES_DATABASE is required')
   }
 
-  // Recreate the database
-  await pool.query(sql.unsafe`DROP DATABASE IF EXISTS ${sql.identifier([process.env.POSTGRES_DATABASE])}`);
-  await pool.query(sql.unsafe`CREATE DATABASE ${sql.identifier([process.env.POSTGRES_DATABASE])}`);
+  const db = sql.identifier([process.env.POSTGRES_DATABASE]);
+  const pool = await createPool({ databaseName: 'postgres' });
 
-  // Close the connection
-  await pool.end();
+  // Recreate the database
+  try {
+    await pool.query(sql.unsafe`DROP DATABASE IF EXISTS ${db}`);
+    await pool.query(sql.unsafe`CREATE DATABASE ${db}`);
+    await pool.end();
+  } catch (e) {
+    await pool.end();
+    throw e;
+  }
 
   // Sync the schema
   await new Promise<void>((resolve, reject) => {
