@@ -6,7 +6,7 @@
     "sync": "npx dotenv-cli -e .env.development -- sh src/scripts/schema-apply.sh",
     "sync:test": "npx dotenv-cli -e .env.test -- sh src/scripts/schema-apply-auto.sh",
     "dev": "yarn sync && NODE_ENV=development ts-node-dev --files --respawn src/index.ts",
-    "test": "jest"
+    "test": "jest --runInBand"
   },
   "dependencies": {
     "@os-team/graphql-test-client": "^1.0.20",
